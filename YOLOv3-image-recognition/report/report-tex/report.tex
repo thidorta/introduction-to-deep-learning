@@ -1,0 +1,360 @@
+\documentclass[conference]{IEEEtran}
+%\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\raggedbottom    
+\usepackage{float}    
+\usepackage{tabularx}
+\begin{document}
+
+\title{Detecção de Objetos com YOLOv3: Fundamentos, Bounding Boxes e Non-Maximum Suppression\\
+
+\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Luiz Felipe Oliveira Costa}
+\IEEEauthorblockA{\textit{IMECC} \\
+\textit{251372}\\
+Campinas, Brasil \\
+l251372@dac.unicamp.br}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Thiago Salvador Teixeira Dorta}
+\IEEEauthorblockA{\textit{Instituto de Computação} \\
+\textit{231413}\\
+Campinas, Brasil \\
+t231413@dac.unicamp.br}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Caio Eduardo Silva dos Santos}
+\IEEEauthorblockA{\textit{Instituto de Química} \\
+\textit{244481}\\
+Campinas, Brasil \\
+c244481@dac.unicamp.br}
+}
+
+\maketitle
+
+\begin{abstract}
+Object detection is a fundamental task in Computer Vision with applications in areas such as surveillance, autonomous systems, and image analysis. This work presents an implementation and evaluation of the YOLOv3 (You Only Look Once) algorithm, a real-time object detection approach based on deep convolutional neural networks. The detection pipeline includes preprocessing, inference, and post-processing stages, with particular emphasis on the manual implementation of Intersection over Union (IoU) and Non-Maximum Suppression (NMS) for filtering redundant detections. Experimental results obtained on sample images demonstrate the effectiveness of the model, while also highlighting the impact of confidence and IoU thresholds on detection performance. The study provides practical insights into the structure and behavior of modern object detection systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+detecção de objetos, redes neurais, classificação, YOLO, visão computacional
+\end{IEEEkeywords}
+
+\section{Introdução}
+A detecção de objetos é uma tarefa fundamental da área de Visão Computacional que tem como objetivo identificar e localizar objetos em imagens digitais. Trata-se de uma aplicação de inteligência artificial que busca capacitar sistemas computacionais a interpretar o conteúdo visual de forma semelhante à percepção humana, reconhecendo e classificando objetos de acordo com categorias semânticas. Essa tecnologia possui ampla aplicação em diversas áreas, como vigilância e segurança, veículos autônomos, diagnóstico médico por imagem, agricultura de precisão e análise de tráfego.
+
+Esse problema pode ser decomposto em duas subtarefas principais. A localização de objetos consiste em determinar a posição de um objeto na imagem, geralmente representada por meio de uma caixa delimitadora (bounding box). Já a classificação de objetos envolve atribuir uma categoria ao objeto identificado, como pessoa, carro ou animal. A detecção de objetos combina essas duas etapas, permitindo estimar simultaneamente tanto a posição quanto a classe de múltiplos objetos em uma única imagem.
+
+Atualmente, os métodos mais utilizados para detecção de objetos são baseados em redes neurais convolucionais profundas. Esses métodos podem ser divididos em duas categorias principais: detectores de dois estágios, como o Faster R-CNN \cite{ren2015fasterrcnn}, que primeiro propõem regiões de interesse e depois realizam a classificação, e detectores de estágio único, como o SSD \cite{liu2016ssd} e o YOLO, que realizam a detecção de forma direta em uma única passagem pela rede, permitindo maior eficiência e desempenho em tempo real.
+
+Neste trabalho, foi utilizado o modelo YOLOv3, que representa uma evolução significativa dentro da família YOLO, sendo amplamente reconhecido por seu bom equilíbrio entre precisão e velocidade. Apesar de existirem versões mais recentes e avançadas, como o YOLOv8, o YOLOv3 foi escolhido por sua arquitetura mais acessível e didática, permitindo uma compreensão mais detalhada dos principais componentes do processo de detecção. Em particular, o uso deste modelo possibilita o estudo aprofundado de etapas fundamentais como o cálculo do Intersection over Union (IoU) e o algoritmo de Non-Maximum Suppression (NMS), essenciais para a filtragem e refinamento das detecções.
+
+\section{Algoritmo YOLOv3: Arquitetura e Funcionamento}
+
+O algoritmo YOLOv3 (You Only Look Once) é um detector de objetos de estágio único que realiza simultaneamente a localização e classificação de objetos em uma única passagem pela rede neural. Sua principal motivação é reduzir o custo computacional e permitir detecção em tempo real, diferentemente de métodos de dois estágios, que realizam essas tarefas separadamente \cite{redmon2018yolov3}.
+
+\subsection{Visão Geral do Pipeline}
+
+O funcionamento do YOLOv3 pode ser dividido em três etapas principais: pré-processamento, inferência e pós-processamento.
+
+\begin{itemize}
+    \item \textbf{Pré-processamento:} a imagem de entrada é redimensionada para um tamanho fixo (tipicamente $416 \times 416$) utilizando a técnica de \textit{letterbox}, que preserva a proporção original.
+    \item \textbf{Inferência:} a imagem é processada por uma rede convolucional profunda que extrai características e gera predições em múltiplas escalas.
+    \item \textbf{Pós-processamento:} as predições são refinadas utilizando limiares de confiança, cálculo de IoU e Non-Maximum Suppression (NMS).
+\end{itemize}
+
+\subsection{Backbone: Extração de Características}
+
+O YOLOv3 utiliza a arquitetura Darknet-53 como \textit{backbone}. Essa rede é composta por camadas convolucionais e blocos residuais, permitindo o aprendizado de representações profundas.
+
+\begin{table}[h]
+\centering
+\caption{Estrutura simplificada do Darknet-53}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Camada} & \textbf{Descrição} \\
+\hline
+Conv + BN + LeakyReLU & Extração inicial de características \\
+Blocos Residuais & Aprendizado profundo e estável \\
+Downsampling & Redução da resolução espacial \\
+\hline
+\end{tabular}
+\end{table}
+
+A utilização de conexões residuais permite mitigar o problema do desvanecimento do gradiente, facilitando o treinamento de redes profundas.
+
+\subsection{Detecção em Múltiplas Escalas}
+
+Uma das principais melhorias do YOLOv3 em relação a versões anteriores é a detecção em três escalas diferentes:
+
+\begin{itemize}
+    \item $13 \times 13$ (objetos grandes)
+    \item $26 \times 26$ (objetos médios)
+    \item $52 \times 52$ (objetos pequenos)
+\end{itemize}
+
+Essa abordagem permite detectar objetos de diferentes tamanhos com maior precisão. A motivação é que objetos pequenos podem desaparecer em camadas profundas, enquanto objetos grandes são melhor representados em resoluções mais baixas.
+
+\subsection{Predição de Bounding Boxes}
+
+Para cada célula da grade, o modelo prevê múltiplas caixas delimitadoras utilizando \textit{anchors}. Cada predição inclui:
+
+\begin{itemize}
+    \item Coordenadas da caixa $(x, y, w, h)$
+    \item Confiança do objeto ($p_o$)
+    \item Probabilidades de classe ($p_c$)
+\end{itemize}
+
+As coordenadas são ajustadas utilizando as seguintes equações:
+
+\begin{equation}
+b_x = \sigma(t_x) + c_x, \quad b_y = \sigma(t_y) + c_y
+\end{equation}
+
+\begin{equation}
+b_w = p_w e^{t_w}, \quad b_h = p_h e^{t_h}
+\end{equation}
+
+onde $(c_x, c_y)$ representa a posição da célula na grade e $(p_w, p_h)$ são as dimensões do anchor.
+
+A função sigmoide $\sigma(\cdot)$ é utilizada para limitar as coordenadas dentro da célula, garantindo estabilidade numérica.
+
+\subsection{Cálculo do Score}
+
+O score final de cada bounding box é dado por:
+
+\begin{equation}
+Score = P(\text{objeto}) \times P(\text{classe} \mid \text{objeto})
+\end{equation}
+
+Essa formulação combina a confiança de existência do objeto com a probabilidade da classe, permitindo priorizar detecções mais confiáveis.
+
+\subsection{Intersection over Union (IoU)}
+
+O IoU mede a sobreposição entre duas caixas:
+
+\begin{equation}
+IoU = \frac{\text{Área da Interseção}}{\text{Área da União}}
+\end{equation}
+
+Essa métrica é utilizada para avaliar a qualidade das predições e também no processo de supressão de caixas redundantes.
+
+\subsection{Non-Maximum Suppression (NMS)}
+
+Após a geração das predições, múltiplas caixas podem representar o mesmo objeto. O algoritmo de NMS é aplicado para eliminar redundâncias:
+
+\begin{enumerate}
+    \item Ordenar as caixas pelo score
+    \item Selecionar a caixa com maior score
+    \item Remover caixas com IoU acima de um limiar
+    \item Repetir o processo
+\end{enumerate}
+
+A motivação do NMS é garantir que apenas a melhor predição para cada objeto seja mantida, evitando múltiplas detecções para a mesma instância. O NMS e o IoU serão explicados em maiores detalhes na próxima seção.
+
+\subsection{Resumo do Processo}
+
+O fluxo completo do YOLOv3 pode ser resumido como:
+
+\begin{enumerate}
+    \item Entrada da imagem e pré-processamento
+    \item Extração de características com Darknet-53
+    \item Predição em múltiplas escalas
+    \item Cálculo de scores e filtragem por limiar
+    \item Aplicação de IoU e NMS
+    \item Geração das detecções finais
+\end{enumerate}
+
+\section{Intersection over Union e Non-Maximum Suppression}
+
+Nesta seção, descrevem-se em detalhes os algoritmos de \textit{Intersection over Union} (IoU) e \textit{Non-Maximum Suppression} (NMS), fundamentais no estágio de pós-processamento do YOLOv3. Esses métodos são responsáveis por avaliar a qualidade das predições e eliminar redundâncias, garantindo que o modelo produza detecções mais consistentes.
+
+\subsection{Intersection over Union (IoU)}
+
+O IoU é uma métrica utilizada para medir o grau de sobreposição entre duas caixas delimitadoras. Seja $B_1$ e $B_2$ duas bounding boxes, o IoU é definido como:
+
+\begin{equation}
+IoU = \frac{Área(B_1 \cap B_2)}{Área(B_1 \cup B_2)}
+\end{equation}
+
+onde a interseção representa a região comum entre as duas caixas, enquanto a união corresponde à área total coberta por ambas.
+
+No código implementado, o cálculo do IoU é realizado a partir das coordenadas $(y_{min}, x_{min}, y_{max}, x_{max})$. Inicialmente, calcula-se a região de interseção:
+
+\begin{equation}
+y_{int}^{min} = \max(y_1^{min}, y_2^{min}), \quad x_{int}^{min} = \max(x_1^{min}, x_2^{min})
+\end{equation}
+
+\begin{equation}
+y_{int}^{max} = \min(y_1^{max}, y_2^{max}), \quad x_{int}^{max} = \min(x_1^{max}, x_2^{max})
+\end{equation}
+
+A área de interseção é então obtida por:
+
+\begin{equation}
+A_{int} = \max(0, x_{int}^{max} - x_{int}^{min}) \cdot \max(0, y_{int}^{max} - y_{int}^{min})
+\end{equation}
+
+A área de união é dada por:
+
+\begin{equation}
+A_{union} = A_1 + A_2 - A_{int}
+\end{equation}
+
+Por fim, o IoU é calculado como a razão entre essas áreas, com tratamento para evitar divisão por zero.
+
+\subsection{Non-Maximum Suppression (NMS)}
+
+O algoritmo de NMS é utilizado para eliminar múltiplas detecções redundantes do mesmo objeto. Em modelos como o YOLO, diversas caixas podem ser previstas para uma mesma instância, sendo necessário selecionar apenas a mais representativa.
+
+O procedimento do NMS pode ser descrito pelos seguintes passos:
+
+\begin{enumerate}
+    \item Ordenar todas as bounding boxes de acordo com seus \textit{scores} em ordem decrescente;
+    \item Selecionar a caixa com maior score (\textit{best box});
+    \item Calcular o IoU entre essa caixa e todas as demais;
+    \item Remover as caixas cujo IoU seja maior que um limiar pré-definido;
+    \item Repetir o processo até que não restem caixas.
+\end{enumerate}
+
+No código implementado, esse processo é otimizado por meio de operações vetorizadas utilizando tensores, permitindo calcular o IoU entre uma caixa e múltiplas outras simultaneamente. Isso reduz significativamente o custo computacional em comparação com abordagens baseadas em laços.
+
+\subsection{Impacto dos Parâmetros}
+
+O desempenho do processo de pós-processamento depende diretamente de dois parâmetros principais: o limiar de IoU ($IoU_{th}$) e o limiar de confiança (\textit{score threshold}).
+
+O parâmetro $IoU_{th}$ controla o quão agressivo é o processo de supressão. Valores baixos tornam o NMS mais restritivo, removendo um maior número de caixas e reduzindo duplicações, porém podendo eliminar detecções válidas. Por outro lado, valores elevados tornam o NMS mais permissivo, mantendo mais caixas, o que pode resultar em múltiplas detecções para o mesmo objeto.
+
+Já o limiar de confiança atua na filtragem inicial das predições. Valores baixos permitem que mais caixas sejam consideradas, aumentando a probabilidade de detectar todos os objetos (maior \textit{recall}), porém introduzindo ruído. Em contraste, valores altos tornam o modelo mais seletivo, reduzindo falsos positivos, mas podendo descartar objetos relevantes.
+
+\subsection{Conclusão da Seção}
+
+Os algoritmos de IoU e NMS desempenham um papel essencial na qualidade final das detecções produzidas pelo YOLOv3. A escolha adequada de seus parâmetros influencia diretamente o equilíbrio entre a quantidade de detecções e sua precisão. Dessa forma, a análise experimental desses parâmetros torna-se fundamental para compreender o comportamento do modelo.
+
+Na próxima seção, são apresentados os resultados obtidos a partir da variação desses limiares, permitindo avaliar empiricamente o impacto dessas escolhas no desempenho do sistema de detecção.
+Essa abordagem permite que o YOLOv3 alcance um bom equilíbrio entre velocidade e precisão, sendo amplamente utilizado em aplicações que exigem processamento em tempo real.
+
+\section{Resultados}
+Esta seção detalha o desempenho do YOLOv3 sobre o conjunto de teste. A configuração padrão, aplicada às Figuras 1, 2, 3 e 4, consistiu em um limiar de confiança de 0.5 e IoU de 0.4 para a Supressão Não-Maximal (NMS). Ajustes específicos foram realizados nas figuras subsequentes: a Figura 5 operou com confiança de 0.1 e IoU de 0.3, enquanto a Figura 6 utilizou 0.2 de confiança e 0.16 de IoU.
+
+\subsection{Imagens de Teste}\label{AA}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\columnwidth]{resultado_surf.png}
+\caption{Identificação de uma pessoa e uma prancha de surf.}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\columnwidth]{resultado_wine.jpg}
+\caption{Identificação de duas cadeiras, uma garrafa e uma taça de vinho.}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\columnwidth]{quarto.png}
+\caption{Identificação de um computador, um controle remoto, um mouse e uma cama.}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\columnwidth]{resultado_ajustado (2).jpg}
+\caption{Identificação de um cachorro, duas cadeiras, um copo e uma garrafa.}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\columnwidth]{resultado_ajustado (1).jpg}
+\caption{Identificação de um cachorro, duas cadeiras, um copo, uma garrafa, uma faca, uma tigela e uma mesa de jantar.}
+\label{fig:}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\columnwidth]{resultado_ajustado.jpg}
+\caption{Identificação de um cachorro, uma cadeira, um copo, uma garrafa, uma faca, uma tigela, cadeiras, copos e uma garrafa.}
+\label{fig:}
+\end{figure}
+
+As Figuras 1 e 2 correspondem às imagens de referência fornecidas na base de dados original do projeto, enquanto as Figuras 3, 4, 5 e 6 representam testes adicionais selecionados para avaliar a robustez do algoritmo em cenários e parâmetros distintos. 
+
+\section{Discussão e análise crítica}
+A implementação manual das funções de IoU e NMS, permitiu uma compreensão profunda do pós-processamento necessário para a detecção de objetos.
+
+\subsection{Tabela de comparação de resultados}\label{AA}
+Tabela comparativa
+\newcolumntype{Y}{>{\centering\arraybackslash\hspace{0pt}}X}
+\renewcommand{\tabularxcolumn}[1]{m{#1}}
+\begin{table}[h]
+\centering
+\footnotesize 
+\begin{tabularx}{\columnwidth}{|c|Y|Y|Y|}
+\hline
+\textbf{Figuras}& \textbf{Objetos detectados} &\textbf{Nível de confiança} &\textbf{Parâmetros}\\
+\hline
+1 & $^{1}$Pessoa, $^{2}$prancha de surf. & $^{1}$1.00, $^{2}$0.99. & Confiança: 0.5. IoU: 0.4. \\ \hline
+2 & $^{1}$Cadeira, $^{2}$cadeira, $^{3}$garrafa, $^{4}$taça de vinho. & $^{1}$0.90, $^{2}$0.81, $^{3}$0.98, $^{4}$1.00. & Confiança: 0.5. IoU: 0.4. \\ \hline
+3 & $^{1}$Computador, $^{2}$controle remoto, $^{3}$mouse, $^{4}$cama. & $^{1}$0.99, $^{2}$0.99, $^{3}$1.00, $^{4}$0.99. & Confiança: 0.5. IoU: 0.4. \\ \hline
+4 & $^{1}$Cachorro, $^{2}$cadeira, $^{3}$cadeira, $^{4}$copo, $^{5}$garrafa. & $^{1}$1.00, $^{2}$0.76, $^{3}$0.61, $^{4}$0.98, $^{5}$0.92. & Confiança: 0.5. IoU: 0.4. \\ \hline
+5 & $^{1}$Cachorro, $^{2}$cadeira, $^{3}$cadeira, $^{4}$copo, $^{5}$garrafa, $^{6}$faca, $^{7}$tigela, $^{8}$mesa de jantar. & $^{1}$1.00, $^{2}$0.76, $^{3}$0.13, $^{4}$0.98, $^{5}$0.92, $^{6}$0.20, $^{7}$0.22, $^{8}$0.22. & Confiança: 0.1. IoU: 0.3. \\ \hline
+6 & $^{1}$Cachorro, $^{2}$cadeira, $^{3}$copo, $^{4}$garrafa, $^{5}$faca, $^{6}$tigela. & $^{1}$1.00, $^{2}$0.76, $^{3}$0.98, $^{4}$0.92, $^{5}$0.20, $^{6}$0.22. & Confiança: 0.2. IoU: 0.16. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Hipótese e comportamento do modelo}\label{AA}
+Embora o modelo tenha apresentado bom desempenho geral, notou-se que o nível de confiança oscila significativamente dependendo das características da imagem. O modelo também errou em algumas detecções. Abaixo, detalhamos os resultados para cada figura:
+
+ \begin{itemize}
+     \item \textbf{Figura 1:} O modelo apresentou um desempenho satisfatório, realizando a detecção precisa de ambas as instâncias presentes na cena com elevados níveis de confiança. A baixa complexidade da imagem, caracterizada por poucos objetos e ausência de oclusões significativas, favoreceu a extração de características pela rede e a correta regressão das \textit{bounding boxes}. 
+ \end{itemize}
+
+
+ \begin{itemize}
+     \item \textbf{Figura 2:} Nesta amostra, o modelo apresentou uma limitação específica na delimitação da garrafa de vinho, fundindo o objeto à sua respectiva sombra na \textit{bounding box}. Este fenômeno indica um desafio do algoritmo em distinguir variações de contraste e projeções de luz como elementos independentes do corpo do objeto. No entanto, o sistema exibiu alta robustez ao identificar com precisão os demais itens sobre a mesa e, notavelmente, uma cadeira situada no fundo da cena.
+ \end{itemize}
+
+
+  \begin{itemize}
+     \item \textbf{Figura 3:} O modelo demonstrou eficácia ao identificar os objetos, mantendo a precisão mesmo diante de sobreposições parciais. Notou-se, entretanto, a ausência de detecção para os travesseiros presentes na cena. Tal fato não decorre de uma falha do algoritmo de detecção em si, mas sim de uma limitação do escopo do dataset COCO, no qual o modelo foi pré-treinado. Uma vez que a classe "travesseiro" (\textit{pillow}) não integra as 80 categorias originais do dataset, o sistema é incapaz de classificar o objeto, evidenciando a dependência do modelo em relação à taxonomia dos dados de treinamento. 
+ \end{itemize}
+
+ \begin{itemize}
+     \item \textbf{Figura 4:} Nesta figura, observou-se que os parâmetros padronizados do modelo não foram plenamente eficazes. O algoritmo identificou erroneamente duas instâncias da classe "cadeira" onde existia apenas um objeto real. Este resultado ilustra um caso típico de redundância de detecção, em que múltiplas \textit{bounding boxes} são geradas para a mesma estrutura física e o processo de filtragem não consegue consolidá-las. 
+
+     \item \textbf{Figura 5}: Nesta rodada de testes, foram aplicados os seguintes parâmetros, um limiar de confiança em 0.1 e IoU (NMS) em 0.3. O resultado evidencia uma degradação na precisão do modelo, com o surgimento de múltiplos falsos positivos. O sistema classificou erroneamente uma cadeira como "mesa de jantar" e interpretou uma grade metálica ao fundo como sendo uma "cadeira". Esses erros demonstram como um índice de confiança excessivamente baixo força o modelo a validar predições que não possuem suporte estatístico suficiente nos mapas de características. Portanto abaixar também o indíce de IoU fez com que o modelo não duplicasse mais a "cadeira" como nos parâmetros testados na Figura 4. 
+
+     \item \textbf{Figura 6:} Na calibração final, ajustamos os parâmetros para que o modelo representasse melhor a cena real, subindo o limiar de confiança e baixando o de IoU. Notamos que os scores de confiança acompanham a complexidade da imagem: valores mais baixos ocorreram justamente onde havia sobreposição de objetos. Essa proximidade entre as instâncias mistura as características visuais e dificulta o ajuste perfeito das \textit{bounding boxes}. No fim, esses índices menores acabam refletindo a própria ambiguidade do cenário, mas sem prejudicar a classificação correta dos objetos. 
+ \end{itemize}
+
+\subsection{Conclusão e proposta de melhoria}\label{AA}
+
+Neste projeto, a implementação e os testes do algoritmo YOLOv3 permitiram compreender na prática como os hiperparâmetros de pós-processamento ditam o desempenho de um sistema de visão computacional. Através dos diversos cenários testados, ficou evidente que a detecção de objetos não depende apenas da rede neural, mas de uma calibração cuidadosa dos hiperparâmetros.
+
+A implementação manual das funções de IoU e do algoritmo NMS foi crucial para observar o fenômeno da redundância e da supressão de objetos. Concluímos que um limiar de confiança muito baixo gera detecções inexistentes (falsos positivos), enquanto um limiar de IoU inadequado falha em consolidar múltiplas caixas para um mesmo objeto ou acaba eliminando objetos reais que estão muito próximos. O equilíbrio encontrado na última rodada de testes (Figura 6) mostrou-se o mais fiel à realidade, equilibrando a sensibilidade necessária para identificar instâncias sobrepostas com o rigor exigido para evitar ruído.
+
+Como propostas de melhoria para trabalhos futuros, sugerimos:
+
+\begin{itemize}
+    \item \textbf{Upgrade para YOLOv8 ou v10:} A utilização de versões mais recentes traria benefícios como a arquitetura \textit{anchor-free}, que melhora a detecção de objetos pequenos e reduz a necessidade de ajustes manuais tão sensíveis nos limiares de NMS.
+    \item \textbf{Fine-tuning em Datasets Específicos:} O modelo utilizado foi limitado às 80 classes do dataset COCO. O treinamento das últimas camadas da rede em bases de dados específicas para ambientes domésticos ou industriais permitiria identificar objetos que foram ignorados nesta etapa, como os travesseiros (Figura 3) que estavam claramente visíveis.
+    \item \textbf{Data Augmentation:} A implementação de técnicas de pré-processamento, como rotação e ajuste de contraste nas imagens de entrada, poderia aumentar a robustez do modelo contra variações de iluminação e sombras projetadas, reduzindo erros como o observado na Figura 2.
+    \item \textbf{Emprego de Soft-NMS:} A substituição do algoritmo tradicional de \textit{Non-Maximum Suppression} por \textit{Soft-NMS} poderia melhorar o refinamento das detecções em casos de objetos próximos ou parcialmente sobrepostos. Diferentemente do NMS convencional, que descarta caixas com alta sobreposição, o \textit{Soft-NMS} reduz gradualmente suas pontuações de confiança, preservando possíveis detecções válidas e diminuindo a chance de remover objetos reais\cite{bodla2017softnms}.
+
+\end{itemize}
+
+\bibliographystyle{IEEEtran}
+\bibliography{referencias}
+\end{document}

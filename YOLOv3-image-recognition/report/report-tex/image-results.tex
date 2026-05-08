@@ -1,0 +1,120 @@
+\documentclass[conference,onecolumn]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\raggedbottom
+
+\begin{document}
+
+\title{Detecção de Objetos com YOLOv3: Fundamentos, Bounding Boxes e Non-Maximum Suppression  \\ [0.5em]\large \section{Relatório de Resultados: Detecção de Objetos nas Imagens} Esta documento apresenta os resultados obtidos com a aplicação do modelo YOLOv3 sobre diferentes imagens de teste. As figuras mostram as caixas delimitadoras geradas pelo modelo, as classes identificadas e os respectivos níveis de confiança associados a cada detecção.}}
+
+\maketitle
+
+\vspace{-1.5em}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{resultado_surf.png}
+\caption{Identificação de uma pessoa e uma prancha de surf em uma cena de praia. O modelo delimitou corretamente os dois objetos principais, com alta confiança nas classes detectadas.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_wine.jpg}
+\caption{Identificação de uma garrafa, uma taça de vinho e cadeiras ao fundo. A detecção da garrafa inclui parte do reflexo/sombra na mesa, enquanto a taça foi reconhecida com alta confiança.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_cachorro_cadeira.jpg}
+\caption{Identificação de um cachorro, uma cadeira, um copo e uma garrafa. O cachorro foi detectado com alta confiança e a cadeira foi delimitada em grande parte da estrutura visível.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_ajustado (2).jpg}
+\caption{Resultado da mesma cena com cachorro e cadeira, mantendo as detecções principais de cachorro, cadeira, copo e garrafa. Observa-se uma segunda detecção parcial de cadeira, indicando redundância em uma região da imagem.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_ajustado (1).jpg}
+\caption{Resultado com limiar mais permissivo, incluindo novas detecções de faca e tigela. A redução do limiar aumenta a sensibilidade do modelo, mas também favorece a presença de objetos com baixa confiança.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_ajustado.jpg}
+\caption{Resultado ajustado com detecção de cachorro, cadeira, copo, garrafa, faca, tigela e mesa de jantar. O modelo reconhece mais objetos na cena, mas também apresenta uma classificação de baixa confiança para mesa de jantar.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{resultado_mesa.jpg}
+\caption{Identificação de objetos sobre a mesa, incluindo garrafas, copo e facas. A mesa de jantar foi detectada como uma grande região da imagem, enquanto objetos menores foram localizados separadamente.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{giraffe_result.jpg}
+\caption{Identificação de uma girafa e uma zebra em ambiente natural. A girafa foi detectada como objeto principal, enquanto a zebra foi localizada parcialmente devido à sobreposição entre os animais.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.35\textwidth]{cat_result.jpg}
+\caption{Identificação de um gato em primeiro plano. A caixa delimitadora cobre o animal de forma consistente, indicando uma detecção simples e com pouca interferência do fundo.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{eagle_result.jpg}
+\caption{Identificação de uma ave próxima à água. O modelo delimitou corretamente o corpo do animal, com alta confiança na classe detectada.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{food_result.jpg}
+\caption{Identificação de múltiplas tigelas, colheres e uma mesa de jantar em uma cena com alimentos. A presença de muitos objetos próximos gera sobreposição de caixas e diferentes níveis de confiança.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{dog_result.jpg}
+\caption{Identificação de um cachorro, uma bicicleta e uma caminhonete ao fundo. O modelo reconheceu objetos em diferentes profundidades da cena, mantendo alta confiança para o cachorro e a bicicleta.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{motorbike_result.jpg}
+\caption{Identificação de uma pessoa conduzindo uma motocicleta. As caixas delimitadoras se sobrepõem parcialmente, refletindo a proximidade física entre condutor e veículo.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{dog2_result.jpg}
+\caption{Identificação de um cachorro deitado, uma bicicleta parcialmente visível e pessoas ao fundo. A detecção do cachorro é precisa, enquanto as pessoas distantes apresentam caixas menores e sobrepostas.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{horses_result.jpg}
+\caption{Identificação de múltiplos cavalos em um campo aberto. O modelo detectou animais próximos entre si, com algumas caixas sobrepostas em regiões de oclusão parcial.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.40\textwidth]{person_result.jpg}
+\caption{Identificação de uma pessoa, um cachorro e um cavalo em ambiente aberto. O modelo reconheceu objetos de classes distintas e com escalas diferentes na mesma cena.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{city_result.jpg}
+\caption{Identificação de objetos em uma cena urbana, incluindo pessoas, carros e semáforo. A distância dos objetos e a alta densidade da cena tornam algumas caixas menores e mais próximas entre si.}
+\end{figure}
+
+\end{document}
