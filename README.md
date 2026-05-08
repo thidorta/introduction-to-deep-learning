@@ -41,15 +41,15 @@ The repository is organized with one folder for each project. This README gives 
 ```
 ---
 
-## Project 1 - Object Detection with YOLOv3
+# Project 1 - Object Detection with YOLOv3
 
-# Topic
+## Topic
 
 Object Detection with YOLOv3: Fundamentals, Bounding Boxes and Non-Maximum Suppression
 
 The first project explores object detection using the YOLOv3 model. The goal is to understand how the model detects objects in images, how bounding boxes are generated, and how techniques such as Non-Maximum Suppression (NMS) help remove redundant detections.
 
-# Objectives
+## Objectives
 
 The main goals of this project are:
 
