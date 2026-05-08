@@ -23,8 +23,8 @@ The repository is organized with one folder for each project. This README gives 
 ---
 
 ## LINKS TO COLAB: 
-`utils.ipynb`: https://colab.research.google.com/drive/1dRhIN2SKsx8inmeqXnmcMYn7dDsIGWVD?usp=sharing
-`YOLOv3.ipynb`: https://colab.research.google.com/drive/1GPbPnK9-yMRCcKA-TnG3XLUc_lBlTg6K?usp=sharing
+- `utils.ipynb`: https://colab.research.google.com/drive/1dRhIN2SKsx8inmeqXnmcMYn7dDsIGWVD?usp=sharing
+- `YOLOv3.ipynb`: https://colab.research.google.com/drive/1GPbPnK9-yMRCcKA-TnG3XLUc_lBlTg6K?usp=sharing
 
 ---
 
@@ -38,7 +38,7 @@ The repository is organized with one folder for each project. This README gives 
 │   ├── report/
 │   ├── images/
 └── README.md
-
+```
 ---
 
 ## Project 1 - Object Detection with YOLOv3
