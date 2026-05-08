@@ -1,6 +1,6 @@
 # MS671 - Introduction to Deep Learning
 
-This repository contains the projects developed for the **# MS671 - Introduction to Deep Learning** course at **Unicamp**.
+This repository contains the projects developed for the **MS671 - Introduction to Deep Learning** course at **Unicamp**.
 
 The repository is organized with one folder for each project. This README gives a general overview of the repository and will be updated as new projects are completed.
 
